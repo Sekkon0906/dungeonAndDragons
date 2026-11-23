@@ -17,6 +17,7 @@
         "http://localhost:8080/login/oauth2/code/mesarol"
       ],
       "defaultClientScopes": [
+        "basic",
         "profile",
         "email",
         "roles",

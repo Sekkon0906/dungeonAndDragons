@@ -1,6 +1,6 @@
 # Verificación de MesaRol
 
-La entrega se probó con PostgreSQL 17.12 en Windows. La suite incluye
+Las 13 pruebas de la entrega pasaron con PostgreSQL 17.12 en Windows. La suite incluye
 la carrera por el último cupo y controles de identidad, permisos y CSRF.
 
 En Edge se abrió la taberna, se llegó al tablón con un clic y se
@@ -8,6 +8,9 @@ inició sesión en Keycloak con una organizadora y dos jugadores. Se
 publicó y editó una partida, se enviaron dos reservas simultáneas,
 se liberó el cupo y se canceló la partida. También se ejecutó un turno
 de práctica en la cripta.
+
+También se intercambió un código de autorización de Keycloak por un JWT
+RS256 y se confirmó que la API lo acepta como token Bearer.
 
 La [guía de entrega](entrega.md) indica cómo reproducir y evidenciar
 el despliegue en el clúster desde un runner Windows.
