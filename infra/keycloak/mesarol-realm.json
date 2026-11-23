@@ -1,0 +1,87 @@
+{
+  "realm": "mesarol",
+  "enabled": true,
+  "sslRequired": "external",
+  "defaultSignatureAlgorithm": "RS256",
+  "registrationAllowed": false,
+  "clients": [
+    {
+      "clientId": "mesarol",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "${OIDC_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/login/oauth2/code/mesarol"
+      ],
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "roles",
+        "web-origins",
+        "acr"
+      ],
+      "protocolMappers": [
+        {
+          "name": "mesarol-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "mesarol",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "directora",
+      "firstName": "Directora",
+      "lastName": "MesaRol",
+      "email": "directora@mesarol.test",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MESAROL_DEMO_ORGANIZER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "jugador",
+      "firstName": "Jugador",
+      "lastName": "MesaRol",
+      "email": "jugador@mesarol.test",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MESAROL_DEMO_PLAYER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "otro",
+      "firstName": "Otro jugador",
+      "lastName": "MesaRol",
+      "email": "otro@mesarol.test",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${MESAROL_DEMO_OTHER_PASSWORD}",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

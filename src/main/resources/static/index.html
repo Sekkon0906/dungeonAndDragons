@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MesaRol · La Linterna Errante</title>
+  <link rel="stylesheet" href="./tavern.css">
+  <script type="module" src="./tavern.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span aria-hidden="true">✦</span> MesaRol</div>
+    <nav aria-label="Lugares de la taberna">
+      <button type="button" data-stop="board">Tablón</button>
+      <button type="button" data-stop="table">Mesa</button>
+      <button type="button" data-stop="book">Mi libro</button>
+      <button type="button" id="practice">Cripta</button>
+      <a class="nav-link" id="login" href="/oauth2/authorization/mesarol">Entrar</a>
+      <button type="button" id="logout" hidden>Salir</button>
+    </nav>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="tavern-title">
+      <h1 id="tavern-title">La Linterna Errante</h1>
+      <p>Explora la taberna y encuentra tu próxima partida de rol.</p>
+    </section>
+    <section id="world" aria-label="Taberna explorable" class="world">
+      <div id="markers" class="markers"></div>
+      <p id="fallback" class="fallback" hidden>La vista 3D no está disponible. Puedes abrir los lugares desde el menú.</p>
+      <button id="interact" class="interact" type="button" hidden></button>
+    </section>
+    <p id="controls" class="controls">Pulsa el suelo para caminar o un marcador para acercarte. También puedes usar WASD, flechas y E.</p>
+  </main>
+  <dialog id="panel" aria-labelledby="panel-title">
+    <form method="dialog"><button class="close" aria-label="Cerrar panel">×</button></form>
+    <h2 id="panel-title"></h2>
+    <div id="panel-content"></div>
+  </dialog>
+  <template id="content-board">
+    <article class="listing">
+      <h3>El secreto de la cripta</h3>
+      <p>Partida de ejemplo · 4 cupos · Nivel inicial</p>
+      <button type="button" class="action" data-open="table">Ver partida</button>
+    </article>
+  </template>
+  <template id="content-table">
+    <p>Un viejo mapa señala una cripta bajo el bosque. Reúne a tu grupo y descubre quién encendió la luz en su interior.</p>
+    <p>Partida de ejemplo · 4 cupos · Nivel inicial. Las reservas se habilitarán al conectar el tablón a la API.</p>
+    <button type="button" class="action" data-open="board">Volver al tablón</button>
+  </template>
+  <template id="content-book">
+    <p>Aquí aparecerán las partidas que reserves y las que organices cuando esté habilitado el inicio de sesión.</p>
+  </template>
+</body>
+</html>

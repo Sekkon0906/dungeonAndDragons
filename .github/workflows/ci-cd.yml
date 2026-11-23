@@ -1,0 +1,103 @@
+name: MesaRol CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mesarol-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: mesarol_test
+          POSTGRES_USER: mesarol_test
+          POSTGRES_PASSWORD: mesarol_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mesarol_test -d mesarol_test"
+          --health-interval 5s --health-timeout 4s --health-retries 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Compilar y probar con PostgreSQL
+        env:
+          TEST_DATABASE_URL: jdbc:postgresql://localhost:5432/mesarol_test
+          TEST_DATABASE_USER: mesarol_test
+          TEST_DATABASE_PASSWORD: mesarol_test
+        run: sh mvnw -B verify
+
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.publish.outputs.image }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Publicar imagen en GHCR
+        id: publish
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker buildx build --push --tag "$image:$GITHUB_SHA" --metadata-file "$RUNNER_TEMP/mesarol-image.json" \
+            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" .
+          digest=$(jq -er '."containerimage.digest"' "$RUNNER_TEMP/mesarol-image.json")
+          printf 'image=%s@%s\n' "$image" "$digest" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    needs: publish
+    runs-on: [self-hosted, windows, mesarol-deploy]
+    environment: kubernetes
+    concurrency:
+      group: mesarol-kubernetes
+    steps:
+      - name: Actualizar MesaRol y validar disponibilidad
+        shell: pwsh
+        env:
+          IMAGE: ${{ needs.publish.outputs.image }}
+          CLUSTER_CONTEXT: ${{ vars.KUBE_CONTEXT }}
+          HEALTH_URL: ${{ vars.MESAROL_HEALTH_URL }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          if (!$env:CLUSTER_CONTEXT -or !$env:HEALTH_URL) {
+            throw 'Configura KUBE_CONTEXT y MESAROL_HEALTH_URL antes de habilitar el despliegue.'
+          }
+          if ($env:IMAGE -notmatch '^ghcr\.io/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$') {
+            throw 'La imagen publicada no contiene un digest válido.'
+          }
+          kubectl --context $env:CLUSTER_CONTEXT -n mesarol set image deployment/mesarol "app=$env:IMAGE"
+          kubectl --context $env:CLUSTER_CONTEXT -n mesarol rollout status deployment/mesarol --timeout=180s
+          $health = Invoke-RestMethod -Uri $env:HEALTH_URL -TimeoutSec 20
+          if ($health.status -ne 'UP') { throw 'MesaRol no responde UP.' }
+          "Imagen desplegada: $env:IMAGE" | Add-Content $env:GITHUB_STEP_SUMMARY
